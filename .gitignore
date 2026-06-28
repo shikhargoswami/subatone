@@ -1,0 +1,45 @@
+# ----- Node -----
+node_modules/
+.npm
+npm-debug.log*
+
+# ----- Build outputs -----
+dist/
+build/
+.expo/
+.next/
+
+# ----- Environment -----
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ----- TypeScript -----
+*.tsbuildinfo
+
+# ----- IDE -----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ----- OS -----
+.DS_Store
+Thumbs.db
+
+# ----- Prisma -----
+packages/db/generated/
+
+# ----- Testing -----
+coverage/
+.nyc_output
+
+# ----- Logs -----
+logs/
+*.log
+
+# ----- Expo -----
+apps/mobile/.expo/
+apps/mobile/ios/
+apps/mobile/android/

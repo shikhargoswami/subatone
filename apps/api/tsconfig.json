@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "strict": true,
+    "exactOptionalPropertyTypes": false,
+    "skipLibCheck": true,
+    "paths": {
+      "@subatone/types": ["../../packages/types/src/index.ts"],
+      "@subatone/validators": ["../../packages/validators/src/index.ts"],
+      "@subatone/db": ["../../packages/db/src/index.ts"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "../../packages/types/src/**/*.ts",
+    "../../packages/validators/src/**/*.ts",
+    "../../packages/db/src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

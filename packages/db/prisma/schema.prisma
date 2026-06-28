@@ -1,0 +1,327 @@
+// This is the Prisma schema file.
+// Full data model for Subatone MVP.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum BillingCycle {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  ANNUALLY
+  CUSTOM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  PAUSED
+  CANCELLED
+}
+
+enum SubscriptionCategory {
+  OTT
+  MUSIC
+  MOBILE
+  AI_TOOLS
+  CLOUD_STORAGE
+  PRODUCTIVITY
+  FINANCE
+  HEALTH_FITNESS
+  GAMING
+  NEWS_EDUCATION
+  RENT
+  UTILITY
+  OTHER
+}
+
+enum ReminderChannel {
+  PUSH
+  EMAIL
+}
+
+enum CoinEventType {
+  EARN_SUBSCRIPTION_ADDED
+  EARN_SUBSCRIPTION_PAID
+  EARN_ANNUAL_BONUS
+  EARN_RENT_PAID
+  EARN_STREAK_MILESTONE
+  EARN_REFERRAL
+  EARN_SIGNUP_BONUS
+  EARN_CHALLENGE
+  REDEEM_FEATURE_UNLOCK
+  REDEEM_VOUCHER
+  REDEEM_CASHBACK
+  EXPIRE
+  ADMIN_ADJUSTMENT
+}
+
+enum UserTier {
+  ROOKIE
+  REGULAR
+  PRIME
+  ELITE
+  OBSIDIAN
+}
+
+enum BadgeSlug {
+  FIRST_STEP
+  WEEK_WARRIOR
+  MONTH_MASTER
+  RENT_REGULAR
+  SUBSCRIPTION_NINJA
+  ANNUAL_OPTIMIZER
+  EARLY_BIRD
+  STREAK_6_MONTHS
+  STREAK_12_MONTHS
+}
+
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  clerkId          String    @unique
+  email            String?   @unique
+  phone            String?   @unique
+  name             String?
+  avatarUrl        String?
+  currency         String    @default("INR")
+  timezone         String    @default("Asia/Kolkata")
+  city             String?
+
+  // Gamification
+  coinBalance      Int       @default(0)
+  coinLifetime     Int       @default(0)  // never decrements — used for tier calc
+  tier             UserTier  @default(ROOKIE)
+  streakDays       Int       @default(0)
+  streakMonths     Int       @default(0)
+  streakLastDate   DateTime?
+
+  // Plan
+  plan             String    @default("free")  // free | pro | prime
+  planExpiresAt    DateTime?
+
+  // Onboarding
+  onboardingDone   Boolean   @default(false)
+  expoPushToken    String?   // Expo push notification token
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime? // soft delete
+
+  subscriptions    Subscription[]
+  recurringPayments RecurringPayment[]
+  reminders        Reminder[]
+  coinLedger       CoinLedger[]
+  badges           UserBadge[]
+  auditLogs        AuditLog[]
+
+  @@index([clerkId])
+  @@index([email])
+  @@index([tier])
+}
+
+// ─────────────────────────────────────────────
+// SUBSCRIPTION
+// ─────────────────────────────────────────────
+
+model Subscription {
+  id               String               @id @default(cuid())
+  userId           String
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name             String
+  category         SubscriptionCategory
+  amount           Float
+  currency         String               @default("INR")
+  billingCycle     BillingCycle         @default(MONTHLY)
+  nextRenewalDate  DateTime
+  startDate        DateTime             @default(now())
+  trialEndDate     DateTime?
+
+  status           SubscriptionStatus   @default(ACTIVE)
+  logoUrl          String?
+  websiteUrl       String?
+  notes            String?
+  tags             String[]             @default([])
+  isShared         Boolean              @default(false)
+
+  // Metadata for pre-loaded library entries
+  libraryId        String?              // reference to ServiceLibrary
+
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  deletedAt        DateTime?
+
+  reminders        Reminder[]
+  coinLedger       CoinLedger[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, nextRenewalDate])
+  @@index([nextRenewalDate])
+}
+
+// ─────────────────────────────────────────────
+// RECURRING PAYMENT (Rent / Utility)
+// ─────────────────────────────────────────────
+
+model RecurringPayment {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type             String   // rent | utility | emi | other
+  name             String   // e.g. "Rent - Indiranagar flat"
+  amount           Float
+  currency         String   @default("INR")
+  dueDayOfMonth    Int      // 1–31
+  nextDueDate      DateTime
+
+  // Landlord / payee details (encrypted at application layer)
+  payeeName        String?
+  upiId            String?  // stored encrypted
+  accountNumber    String?  // stored encrypted
+  ifscCode         String?  // stored encrypted
+
+  notes            String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  reminders        Reminder[]
+  coinLedger       CoinLedger[]
+
+  @@index([userId])
+  @@index([userId, nextDueDate])
+}
+
+// ─────────────────────────────────────────────
+// REMINDER
+// ─────────────────────────────────────────────
+
+model Reminder {
+  id                  String          @id @default(cuid())
+  userId              String
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subscriptionId      String?
+  subscription        Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  recurringPaymentId  String?
+  recurringPayment    RecurringPayment? @relation(fields: [recurringPaymentId], references: [id], onDelete: Cascade)
+
+  daysBefore          Int             // 7 | 3 | 1 | 0
+  channels            ReminderChannel[] @default([PUSH])
+  scheduledAt         DateTime
+  isSent              Boolean         @default(false)
+  sentAt              DateTime?
+  failureReason       String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([isSent, scheduledAt])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// COIN LEDGER
+// ─────────────────────────────────────────────
+
+model CoinLedger {
+  id                  String        @id @default(cuid())
+  userId              String
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  delta               Int           // positive = earn, negative = redeem/expire
+  type                CoinEventType
+  description         String
+
+  // Optional references to what triggered the event
+  subscriptionId      String?
+  subscription        Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  recurringPaymentId  String?
+  recurringPayment    RecurringPayment? @relation(fields: [recurringPaymentId], references: [id])
+
+  expiresAt           DateTime?     // set on EARN events; null = no expiry for bonus events
+
+  createdAt           DateTime      @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+// ─────────────────────────────────────────────
+// USER BADGE
+// ─────────────────────────────────────────────
+
+model UserBadge {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeSlug   BadgeSlug
+  earnedAt    DateTime  @default(now())
+
+  @@unique([userId, badgeSlug])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// SERVICE LIBRARY (Pre-loaded service catalog)
+// ─────────────────────────────────────────────
+
+model ServiceLibrary {
+  id             String               @id @default(cuid())
+  name           String
+  category       SubscriptionCategory
+  logoUrl        String?
+  websiteUrl     String?
+  defaultAmount  Float?
+  defaultCycle   BillingCycle         @default(MONTHLY)
+  country        String               @default("IN")
+  isPopular      Boolean              @default(false)
+  searchTerms    String[]             @default([])
+
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([category])
+  @@index([isPopular])
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG (Security & Compliance)
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // e.g. "subscription.created", "user.deleted"
+  resourceId String?  // id of affected record
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?    // additional context
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
