@@ -7,11 +7,6 @@ import type { UserProfile } from '@subatone/types'
 import * as Notifications from 'expo-notifications'
 import { useAuthStore } from './auth.store'
 
-interface SyncResult {
-  user: UserProfile
-  isNewUser: boolean
-}
-
 export function useAuthSync() {
   const api = useApiClient()
   const setUser = useAuthStore((s) => s.setUser)
@@ -29,9 +24,9 @@ export function useAuthSync() {
       // Push token is optional — do not block auth if it fails
     }
 
-    const result = await api.post<SyncResult>('/auth/sync', { expoPushToken })
-    setUser(result.user)
-    return { isNewUser: result.isNewUser }
+    const user = await api.post<UserProfile>('/auth/sync', { expoPushToken })
+    setUser(user)
+    return { isNewUser: false }
   }
 
   return { syncUser }

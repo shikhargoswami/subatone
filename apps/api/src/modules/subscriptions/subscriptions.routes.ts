@@ -68,7 +68,7 @@ subscriptionRoutes.get(
 
     const result = await service.listSubscriptions(userId, { page, pageSize, status })
 
-    return c.json({ success: true, data: result.items, meta: result.pagination })
+    return c.json({ success: true, data: result })
   },
 )
 

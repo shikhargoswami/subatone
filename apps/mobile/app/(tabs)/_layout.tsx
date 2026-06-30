@@ -1,13 +1,26 @@
 // apps/mobile/app/(tabs)/_layout.tsx
 // Tab navigator — main app screens after authentication.
 
+import { useEffect } from 'react'
 import { Tabs } from 'expo-router'
 import { useAuth } from '@clerk/clerk-expo'
 import { Redirect } from 'expo-router'
 import { Colors } from '../../src/shared/constants/colors'
+import { useAuthSync } from '../../src/modules/auth/useAuthSync'
 
 export default function TabsLayout() {
   const { isSignedIn } = useAuth()
+  const { syncUser } = useAuthSync()
+
+  // Ensure DB user record exists whenever the app opens with a cached session.
+  // auth/sync is idempotent — safe to call on every app launch.
+  useEffect(() => {
+    if (isSignedIn) {
+      syncUser().catch(() => {
+        // Non-fatal — dashboard will show its own retry UI
+      })
+    }
+  }, [isSignedIn])
 
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />

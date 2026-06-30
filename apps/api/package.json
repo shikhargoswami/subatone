@@ -3,17 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file .env src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "jest --passWithNoTests",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "jest --passWithNoTests --testPathIgnorePatterns=journeys",
+    "test:watch": "jest --watch --testPathIgnorePatterns=journeys",
+    "test:coverage": "jest --coverage --testPathIgnorePatterns=journeys",
+    "test:journeys": "jest --testPathPattern=journeys --runInBand --verbose",
+    "test:all": "jest --runInBand --verbose",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/backend": "^1.13.0",
+    "@hono/node-server": "^2.0.6",
+    "@hono/zod-validator": "^0.3.0",
     "@prisma/client": "^5.16.0",
     "@subatone/db": "*",
     "@subatone/types": "*",
@@ -24,23 +28,28 @@
     "ioredis": "^5.4.0",
     "pino": "^9.3.0",
     "pino-pretty": "^11.2.0",
-    "zod": "^3.23.0",
-    "@hono/zod-validator": "^0.3.0"
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^22.0.0",
+    "@types/supertest": "^6.0.0",
     "jest": "^29.7.0",
+    "supertest": "^7.0.0",
     "ts-jest": "^29.2.0",
     "tsx": "^4.16.0",
-    "typescript": "^5.5.0",
-    "supertest": "^7.0.0",
-    "@types/supertest": "^6.0.0"
+    "typescript": "^5.5.0"
   },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "setupFiles": ["./jest.setup.ts"],
+    "testMatch": [
+      "**/__tests__/**/*.test.ts",
+      "**/__tests__/journeys/*.journey.test.ts"
+    ],
+    "setupFiles": [
+      "./jest.setup.ts"
+    ],
     "moduleNameMapper": {
       "^@subatone/types$": "<rootDir>/../../packages/types/src/index.ts",
       "^@subatone/validators$": "<rootDir>/../../packages/validators/src/index.ts",
@@ -48,13 +57,20 @@
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "transform": {
-      "^.+\\.ts$": ["ts-jest", { "isolatedModules": true, "diagnostics": false }]
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "isolatedModules": true,
+          "diagnostics": false
+        }
+      ]
     },
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/index.ts",
-      "!src/**/*.d.ts"
+      "!src/**/*.d.ts",
+      "!src/**/__tests__/helpers/**"
     ]
   }
 }

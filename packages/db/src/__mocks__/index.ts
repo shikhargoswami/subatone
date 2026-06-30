@@ -1,33 +1,35 @@
 // packages/db/src/__mocks__/index.ts
-// Stub for @subatone/db used in Jest tests.
-// Returns plain spy functions so tests can mock individual methods.
-// The actual test files use jest.spyOn or jest.mocked to set return values.
+// Jest mock for @subatone/db.
+// In CJS mode (no "type":"module" in apps/api/package.json),
+// the jest global is available at module evaluation time.
 
-const noop = () => Promise.resolve(null as any)
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fn = () => jest.fn().mockResolvedValue(null as any)
+const fnArr = () => jest.fn().mockResolvedValue([] as any)
 
 export const prisma = {
   user: {
-    findUnique: noop, findFirst: noop, create: noop, update: noop,
-    updateMany: noop, delete: noop, count: noop, findMany: noop,
+    findUnique: fn(), findFirst: fn(), findUniqueOrThrow: fn(), create: fn(), update: fn(),
+    updateMany: fn(), delete: fn(), count: fn(), findMany: fnArr(),
   },
   subscription: {
-    findUnique: noop, findFirst: noop, create: noop, update: noop,
-    updateMany: noop, delete: noop, count: noop, findMany: noop,
+    findUnique: fn(), findFirst: fn(), findUniqueOrThrow: fn(), create: fn(), update: fn(),
+    updateMany: fn(), delete: fn(), count: fn(), findMany: fnArr(),
   },
   recurringPayment: {
-    findUnique: noop, findFirst: noop, create: noop, update: noop,
-    updateMany: noop, delete: noop, count: noop, findMany: noop,
+    findUnique: fn(), findFirst: fn(), findUniqueOrThrow: fn(), create: fn(), update: fn(),
+    updateMany: fn(), delete: fn(), count: fn(), findMany: fnArr(),
   },
-  coinLedger: { create: noop, findMany: noop, aggregate: noop },
-  userBadge: { findMany: noop, upsert: noop, create: noop },
-  reminder: { create: noop, findFirst: noop, findMany: noop, update: noop, updateMany: noop },
-  serviceLibrary: { findMany: noop, findUnique: noop },
-  auditLog: { create: noop },
-  $transaction: async (ops: any) => {
+  coinLedger: { create: fn(), findMany: fnArr(), aggregate: fn() },
+  userBadge: { findMany: fnArr(), upsert: fn(), create: fn() },
+  reminder: { create: fn(), findFirst: fn(), findMany: fnArr(), update: fn(), updateMany: fn() },
+  serviceLibrary: { findMany: fnArr(), findUnique: fn() },
+  auditLog: { create: fn() },
+  $transaction: jest.fn(async (ops: any) => {
     if (Array.isArray(ops)) return Promise.all(ops)
     if (typeof ops === 'function') return ops(prisma)
     return ops
-  },
-  $connect: noop,
-  $disconnect: noop,
+  }),
+  $connect: fn(),
+  $disconnect: fn(),
 }

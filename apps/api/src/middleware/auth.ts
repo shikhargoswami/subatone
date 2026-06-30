@@ -3,13 +3,9 @@
 // Attaches userId and clerkId to Hono context.
 
 import { createMiddleware } from 'hono/factory'
-import { createClerkClient } from '@clerk/backend'
+import { verifyToken } from '@clerk/backend'
 import { pinoLogger } from '../lib/logger.js'
 import { prisma } from '@subatone/db'
-
-const clerk = createClerkClient({
-  secretKey: process.env['CLERK_SECRET_KEY']!,
-})
 
 // Extend Hono context variables
 declare module 'hono' {
@@ -35,7 +31,9 @@ export const requireAuth = createMiddleware(async (c, next) => {
   let clerkUserId: string
 
   try {
-    const payload = await (clerk as any).verifyToken(token)
+    const payload = await verifyToken(token, {
+      jwtKey: process.env['CLERK_JWT_KEY'],
+    })
     clerkUserId = payload.sub
   } catch (err) {
     pinoLogger.warn({ err, requestId: c.get('requestId') }, 'Invalid token')

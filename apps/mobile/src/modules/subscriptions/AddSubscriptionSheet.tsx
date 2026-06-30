@@ -31,14 +31,14 @@ export function AddSubscriptionSheet({ visible, onClose }: Props) {
 
   const { data: libraryResults, isLoading: isSearching } = useQuery<ServiceLibraryItem[]>({
     queryKey: ['library', searchQuery],
-    queryFn: () => api.get<ServiceLibraryItem[]>(`/library/search?q=${encodeURIComponent(searchQuery)}`),
+    queryFn: () => api.get<ServiceLibraryItem[]>(`/library?query=${encodeURIComponent(searchQuery)}`),  
     enabled: searchQuery.length >= 2,
   })
 
   const handleSelectService = (svc: ServiceLibraryItem) => {
     setSelectedService(svc)
     setAmount(svc.defaultAmount ? String(svc.defaultAmount) : '')
-    setBillingCycle(svc.defaultBillingCycle ?? 'MONTHLY')
+    setBillingCycle(svc.defaultCycle ?? 'MONTHLY')
     setStep('confirm')
   }
 
@@ -115,7 +115,7 @@ export function AddSubscriptionSheet({ visible, onClose }: Props) {
             ))}
 
             {searchQuery.length >= 2 && libraryResults?.length === 0 && !isSearching && (
-              <TouchableOpacity style={styles.manualBtn} onPress={() => setStep('manual')}>
+              <TouchableOpacity style={styles.manualBtn} onPress={() => setStep('confirm')}>
                 <Text style={styles.manualBtnText}>Add "{searchQuery}" manually →</Text>
               </TouchableOpacity>
             )}

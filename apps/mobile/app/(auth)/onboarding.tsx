@@ -93,7 +93,7 @@ export default function OnboardingScreen() {
             <Text style={styles.bonusText}>🎁 You've earned 100 Suba Coins just for signing up!</Text>
           </View>
           <TouchableOpacity style={styles.primaryBtn} onPress={() => setStep(1)}>
-            <Text style={styles.primaryBtnText}>Let's see what I'm spending →</Text>
+            <Text style={styles.primaryBtnText}>{"Let's see what I'm spending →"}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -193,7 +193,7 @@ export default function OnboardingScreen() {
           <Text style={styles.heading}>Your dashboard is ready</Text>
           <Text style={styles.body}>
             {firstSubAdded
-              ? 'You can now see exactly what you're spending on subscriptions. Every payment earns you coins.'
+              ? "You can now see exactly what you're spending on subscriptions. Every payment earns you coins."
               : 'Add subscriptions anytime from the home screen. Every payment you track earns coins.'}
           </Text>
           <View style={styles.featureList}>

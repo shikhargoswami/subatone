@@ -25,7 +25,7 @@ export function CategoryBreakdownRow({ item }: Props) {
         <View style={[styles.fill, { width: `${item.percentage}%`, backgroundColor: color }]} />
       </View>
       <Text style={styles.pct}>{item.percentage.toFixed(0)}%</Text>
-      <Text style={styles.amount}>₹{item.totalMonthly.toLocaleString('en-IN')}</Text>
+      <Text style={styles.amount}>₹{(item.totalAmount ?? 0).toLocaleString('en-IN')}</Text>
     </View>
   )
 }
